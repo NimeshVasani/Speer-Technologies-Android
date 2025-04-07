@@ -60,13 +60,21 @@ Ktor is used for making network requests to the GitHub API, fetching user data, 
 ### Dependency Injection with Koin
 
 ```kotlin
-val appModule = module {
-    viewModel { UsersViewModel(get()) }
-    single { GitHubRepository(get()) }
-    single { KtorClient() }
+fun provideAppModule() = module {
+
+
+    //provides auth
+    viewModelOf(::UsersViewmodel)
+    singleOf(::UsersRepository)
 }
 
-startKoin {
-    androidContext(this@App)
-    modules(appModule)
+class BaseApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidLogger()
+            androidContext(this@BaseApplication)
+            modules(listOf(provideAppModule(), providesNetworkModule()))
+        }
+    }
 }
