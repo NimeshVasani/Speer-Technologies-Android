@@ -141,7 +141,7 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "Start Chatting",
+                text = "Speer Technologies",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 color = Color.White,
@@ -165,7 +165,7 @@ fun ProfileScreen(
             )
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = "Sign up for a free account, and start chat with Friends and Family.",
+                text = "This is android assessment",
                 modifier = Modifier
                     .widthIn(max = with(LocalDensity.current) { 700.dp })
                     .padding(horizontal = 20.dp),
