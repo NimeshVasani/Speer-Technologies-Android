@@ -60,7 +60,7 @@ fun LoginScreen(onSignInClick: (email:String,password:String) -> Unit, onSignUpC
             modifier = Modifier.size(100.dp)
 
         )
-        Text(text = "metrocery", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(text = "Speer-Technologies", fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(32.dp))
 

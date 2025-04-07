@@ -59,11 +59,11 @@ fun SignUpScreen(onSignInClick: (email: String, password: String) -> Unit) {
 
         Image(
             painter = painterResource(R.drawable.sign_up_back), // Replace with your image
-            contentDescription = "Grocery Cart",
+            contentDescription = "Logo",
             modifier = Modifier.size(100.dp)
 
         )
-        Text(text = "metrocery", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(text = "Speer-Technologies", fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(32.dp))
 

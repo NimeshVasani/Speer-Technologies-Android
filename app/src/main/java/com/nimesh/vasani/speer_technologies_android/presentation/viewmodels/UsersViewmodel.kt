@@ -6,18 +6,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimesh.vasani.speer_technologies_android.data.model.GitHubUserResponse
 import com.nimesh.vasani.speer_technologies_android.data.model.User
-import com.nimesh.vasani.speer_technologies_android.data.repositories.AuthRepository
+import com.nimesh.vasani.speer_technologies_android.data.repositories.UsersRepository
 import com.nimesh.vasani.speer_technologies_android.others.Response
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class AuthViewModel(
-    private val repository: AuthRepository
+class UsersViewmodel(
+    private val repository: UsersRepository
 ) : ViewModel() {
 
     private val _searchResults = MutableStateFlow<Response<GitHubUserResponse>?>(null)
     val searchResults: StateFlow<Response<GitHubUserResponse>?> = _searchResults
+
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -40,5 +44,10 @@ class AuthViewModel(
             }
         }
     }
+
+    fun setCurrentUser(user: User){
+        _currentUser.value = user
+    }
+
 
 }

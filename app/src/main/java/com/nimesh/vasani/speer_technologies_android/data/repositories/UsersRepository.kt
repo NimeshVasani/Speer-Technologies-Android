@@ -3,6 +3,7 @@ package com.nimesh.vasani.speer_technologies_android.data.repositories
 
 
 import com.nimesh.vasani.speer_technologies_android.data.model.GitHubUserResponse
+import com.nimesh.vasani.speer_technologies_android.data.model.User
 import com.nimesh.vasani.speer_technologies_android.others.Response
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 
-class AuthRepository(
+class UsersRepository(
     private val client: HttpClient,
 
 ) {
@@ -34,6 +35,25 @@ class AuthRepository(
                 }
                 val gitHubUserResponse = json.decodeFromString<GitHubUserResponse>(result)
                 emit(Response.Success(gitHubUserResponse))
+            }
+
+        } catch (e: Exception) {
+            emit(Response.Error(e.localizedMessage ?: "Unknown Error"))
+        }
+    }
+
+    suspend fun getFollowers(link: String): Flow<Response<List<User>>> = flow {
+
+        try {
+            val response: HttpResponse = client.get(link)
+
+            if (response.status == HttpStatusCode.OK) {
+                val result = response.bodyAsText()
+                if (result.contains("error")) {
+                    emit(Response.Error("Error: $result"))
+                }
+                val gitFollowers = json.decodeFromString<List<User>>(result)
+                emit(Response.Success(gitFollowers))
             }
 
         } catch (e: Exception) {
