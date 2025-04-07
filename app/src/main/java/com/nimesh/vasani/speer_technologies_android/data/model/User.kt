@@ -14,6 +14,10 @@ data class User(
     val gists_url:String? = null,
     val repos_url:String? = null,
     val url:String? = null,
+    var followers: List<User>? = null,
+    var following: List<User>? = null,
+    var gists: List<User>? = null,
+    var repos: List<UserRepos>? = null,
     @PrimaryKey(autoGenerate = true) val id: Int = 0
 )
 

@@ -2,7 +2,6 @@ package com.nimesh.vasani.speer_technologies_android.presentation.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,26 +16,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.PinDrop
-import androidx.compose.material.icons.outlined.AddBox
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
@@ -51,106 +48,77 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.rememberAsyncImagePainter
-import com.nimesh.vasani.speer_technologies_android.data.model.User
 import com.nimesh.vasani.speer_technologies_android.presentation.viewmodels.UsersViewmodel
-import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UsersScreen(
     modifier: Modifier = Modifier,
-    usersViewmodel: UsersViewmodel = koinViewModel(),
+    usersViewmodel: UsersViewmodel,
+    onFollowersClick: () -> Unit
 ) {
 
     val currentUser = usersViewmodel.currentUser.collectAsStateWithLifecycle()
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize().safeDrawingPadding()
-    ) {
-        item {
-            Box {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp, end = 20.dp, top = 10.dp, bottom = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+    val isRefreshing by usersViewmodel.isLoading.collectAsStateWithLifecycle()
+
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            usersViewmodel.getFollowers(currentUser.value?.followers_url ?: "")
+
+        },
+        modifier = modifier,
+        state = pullToRefreshState,
+        indicator = {
+            Indicator(
+                modifier = Modifier.align(Alignment.TopCenter),
+                isRefreshing = isRefreshing,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                state = pullToRefreshState
+            )
+        },
+    ) {
+
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+        ) {
+            item {
+                Box {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+
                         Text(
-                            text =currentUser.value?.login?:"Unknown user",
+                            text = currentUser.value?.login ?: "Unknown user",
                             fontSize = 30.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = ExtraBold,
                             fontFamily = FontFamily.SansSerif,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        IconButton(
-                            onClick = {  },
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .clip(CircleShape)
-                                .size(30.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AddBox,
-                                contentDescription = "add",
-                                modifier = Modifier.fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        IconButton(
-                            onClick = {  },
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .size(30.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FavoriteBorder,
-                                contentDescription = "fav",
-                                modifier = Modifier.fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        IconButton(
-                            onClick = {  },
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .size(30.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = "setting",
-                                modifier = Modifier.fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 20.dp, top = 10.dp, bottom = 16.dp),
 
-
-                    // Profile picture and stats
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp, bottom = 16.dp, end = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Box(
+                            )
+                        // Profile picture and stats
+                        Row(
                             modifier = Modifier
-                                .clickable(
-                                    onClick = {},
-                                    interactionSource = null,
-                                    indication = null
-                                ),
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, bottom = 16.dp, end = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
 
-                            ) {
 
                             Image(
-                                painter = rememberAsyncImagePainter(""),
+                                painter = rememberAsyncImagePainter(currentUser.value?.avatar_url),
                                 contentDescription = "",
                                 modifier = Modifier
                                     .size(90.dp)
@@ -163,131 +131,106 @@ fun UsersScreen(
                                 contentScale = ContentScale.Crop
                             )
 
-                            Text(
-                                text = "wjdwn",
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .border(
-                                        BorderStroke(4.dp, MaterialTheme.colorScheme.primary),
-                                        CircleShape
-                                    )
-                                    .padding(4.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onPrimary),
-                                textAlign = TextAlign.Center,
-                                fontSize = 20.sp
-                            )
-                        }
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CustomText(
-                                text = "vff",
-                                fontSize = 16.sp
-                            )
-                            CustomText(text = "POSTS", color = Color.Gray, fontSize = 12.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CustomText(
-                                text = "efef",
-                                fontSize = 16.sp
-                            )
-                            CustomText(text = "Likes", color = Color.Gray, fontSize = 12.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CustomText(
-                                text = "state.profileResponse?.user?.user_contacts?.toString() ?",
-                                fontSize = 16.sp
-                            )
-                            CustomText(text = "CONTACTS", color = Color.Gray, fontSize = 12.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CustomText(
-                                text =  "efee",
-                                fontSize = 16.sp
-                            )
-                            CustomText(text = "AURA", color = Color.Gray, fontSize = 12.sp)
-                        }
-                    }
 
 
-                    // Location and switch
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, end = 20.dp),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PinDrop,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.size(20.dp)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CustomText(
+                                    text = currentUser.value?.repos?.size?.toString()
+                                        ?: "not visible",
+                                    fontSize = 16.sp
+                                )
+                                CustomText(text = "Repos", color = Color.Gray, fontSize = 12.sp)
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.clickable {
+                                    onFollowersClick()
+                                }) {
+                                CustomText(
+                                    text = currentUser.value?.followers?.size.toString(),
+                                    fontSize = 16.sp
+                                )
+                                CustomText(text = "Followers", color = Color.Gray, fontSize = 12.sp)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CustomText(
+                                    text = currentUser.value?.following?.size?.toString()
+                                        ?: "not visible",
+                                    fontSize = 16.sp
+                                )
+                                CustomText(
+                                    text = "Followings",
+                                    color = Color.Gray,
+                                    fontSize = 12.sp
+                                )
+                            }
 
-                        )
+                        }
                         Text(
-                            text = "Exploring In Toronto",
-                            fontSize = 18.sp,
-                            modifier = Modifier.padding(2.dp),
-                            fontWeight = ExtraBold,
-                            fontFamily = FontFamily.SansSerif
+                            text = "${currentUser.value?.login}'s Repositories",
+                            fontSize = 20.sp,
+                            fontWeight = W600,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(start = 16.dp)
+                                .fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Switch(
-                            checked = false, onCheckedChange = {
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                                //viewModel.updateUserExploreStatus(isExploreOn)
-                            }, colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = Color.Blue,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.secondary
-                            )
+                        HorizontalDivider(
+                            thickness = 0.5.dp
                         )
+                        Spacer(modifier = Modifier.height(20.dp))
+
                     }
-                    Text(
-                        text =  "No bio Available",
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = 16.sp,
-                        modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, end = 20.dp)
-                    )
-                    //Edit Profile Nav route
-                    Button(
-                        onClick = {
 
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
-                        modifier = Modifier
-                            .padding(start = 10.dp, bottom = 16.dp, end = 10.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "Edit Profile",
-                            fontSize = 16.sp,
-                            fontWeight = ExtraBold,
-                            fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                    Text(
-                        text = "Your Posts",
-                        fontSize = 20.sp,
-                        fontWeight = W600,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(start = 16.dp)
-                            .fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Divider(
-                        thickness = 0.5.dp
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    //this is for user own posts
                 }
+            }
+            if (currentUser.value?.repos?.isNotEmpty() == true)
+                itemsIndexed(currentUser.value?.repos!!) { index, item ->
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
 
+
+                        ) {
+                        Column(
+                            modifier = Modifier.padding(15.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = item.name,
+                                fontSize = 20.sp,
+                                fontWeight = W600,
+                                modifier = Modifier
+                            )
+                            item.description?.let {
+                                Text(
+                                    text = it,
+                                    fontSize = 18.sp,
+                                    fontWeight = W600,
+                                    modifier = Modifier
+                                )
+                            }
+                            Text(
+                                text = item.url,
+                                fontSize = 16.sp,
+                                fontWeight = W600,
+                                modifier = Modifier
+                            )
+                        }
+                    }
+                }
+            else {
+                item {
+                    Text(
+                        "No repos found",
+                        modifier = Modifier.fillMaxSize(),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }

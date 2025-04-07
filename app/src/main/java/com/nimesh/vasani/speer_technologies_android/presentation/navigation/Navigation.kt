@@ -18,3 +18,6 @@ object SignUpScreen
 @Serializable
 object ProfileScreen
 
+@Serializable
+object FollowersScreen
+

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.rememberAsyncImagePainter
+import com.nimesh.vasani.speer_technologies_android.data.model.User
 import com.nimesh.vasani.speer_technologies_android.presentation.viewmodels.UsersViewmodel
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -54,7 +55,7 @@ import org.koin.androidx.compose.koinViewModel
 )
 @Composable
 fun HomeScreen(
-    onUsersClick: () -> Unit,
+    onUsersClick: (user: User) -> Unit,
     usersViewModel: UsersViewmodel = koinViewModel()
 ) {
 
@@ -69,7 +70,7 @@ fun HomeScreen(
 
     LaunchedEffect(queryText.value) {
         // Wait for a short delay to prevent calling on each keystroke
-        delay(500) // Adjust delay as needed (e.g., 300ms or 500ms)
+        delay(500)
         if (queryText.value != searchQuery.value) {
             searchQuery.value = queryText.value
             if (searchQuery.value.isNotBlank()) {
@@ -176,8 +177,8 @@ fun HomeScreen(
                             .padding(start = 10.dp)
                             .height(80.dp)
                             .clickable {
-                                usersViewModel.setCurrentUser(users[it])
-                                onUsersClick()
+
+                                onUsersClick(users[it])
                             },
                         verticalArrangement = Arrangement.Center
                     ) {
