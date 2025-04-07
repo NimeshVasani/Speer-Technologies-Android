@@ -28,7 +28,7 @@ This project is an Android app developed as part of the Speer Technologies Andro
 <h1 align="center">
 
 
-[Gameplay Video](https://drive.google.com/file/d/1PEeJWY_59i8XB47SwmnU08qk6e7r6lxg/view?usp=sharing)
+[screen recording](https://drive.google.com/file/d/1PEeJWY_59i8XB47SwmnU08qk6e7r6lxg/view?usp=sharing)
 
   
 </h1>
