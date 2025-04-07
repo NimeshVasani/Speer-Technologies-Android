@@ -63,7 +63,7 @@ Ktor is used for making network requests to the GitHub API, fetching user data, 
 fun provideAppModule() = module {
 
 
-    //provides auth
+    //provides repos 
     viewModelOf(::UsersViewmodel)
     singleOf(::UsersRepository)
 }
