@@ -22,6 +22,22 @@ This project is an Android app developed as part of the Speer Technologies Andro
 - **Koin**: A lightweight dependency injection library for Kotlin.
 - **StateFlow**: A state management tool for handling UI state.
 
+</br>
+</br>
+
+<h1 align="center">
+
+
+- [![Gameplay video](https://drive.google.com/file/d/1PEeJWY_59i8XB47SwmnU08qk6e7r6lxg/view)
+  
+</h1>
+
+
+<video width="320" height="240" controls>
+  
+  <source src="https://video.wixstatic.com/video/9f921c_196fda933c3849ebb3e427db442c91cc/1080p/mp4/file.mp4" type="video/mp4">
+  
+</video>
 ## Architecture
 
 ### MVVM (Model-View-ViewModel)
