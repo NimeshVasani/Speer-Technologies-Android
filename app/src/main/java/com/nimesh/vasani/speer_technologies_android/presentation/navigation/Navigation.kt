@@ -1,5 +1,7 @@
 package com.nimesh.vasani.speer_technologies_android.presentation.navigation
 
+import com.nimesh.vasani.speer_technologies_android.data.model.Posts
+import com.nimesh.vasani.speer_technologies_android.data.model.User
 import kotlinx.serialization.Serializable
 
 
@@ -7,7 +9,7 @@ import kotlinx.serialization.Serializable
 object HomeScreen
 
 @Serializable
-object UsersScreen
+data class UsersScreen(val user: User)
 
 @Serializable
 object LoginScreen
@@ -19,5 +21,11 @@ object SignUpScreen
 object ProfileScreen
 
 @Serializable
-object FollowersScreen
+data class FollowersScreen(var followers : List<User>)
+
+@Serializable
+object SearchScreen
+
+@Serializable
+data class DetailScreen(val post: Posts,)
 

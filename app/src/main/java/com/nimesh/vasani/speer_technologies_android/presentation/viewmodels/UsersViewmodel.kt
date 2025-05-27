@@ -4,29 +4,28 @@ package com.nimesh.vasani.speer_technologies_android.presentation.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.database.core.Repo
 import com.nimesh.vasani.speer_technologies_android.data.model.GitHubUserResponse
 import com.nimesh.vasani.speer_technologies_android.data.model.User
+import com.nimesh.vasani.speer_technologies_android.data.model.UserState
 import com.nimesh.vasani.speer_technologies_android.data.repositories.UsersRepository
 import com.nimesh.vasani.speer_technologies_android.others.Response
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-
 
 
 class UsersViewmodel(
     private val repository: UsersRepository
 ) : ViewModel() {
 
-    private val _searchResults = MutableStateFlow<Response<GitHubUserResponse>?>(null)
-    val searchResults: StateFlow<Response<GitHubUserResponse>?> = _searchResults
 
-    private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+    private val _uiState = MutableStateFlow<UserState>(UserState())
+    val uiState: StateFlow<UserState> = _uiState.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -36,83 +35,103 @@ class UsersViewmodel(
 
     fun searchUsers(query: String) {
         viewModelScope.launch {
-            _isLoading.value = true
-            repository.searchGitHubUsers(query).collectLatest { response ->
-                _isLoading.value = false
-                if (response.data != null && response.data.items.isNotEmpty()) {
-                    _searchResults.value = response
-                    _errorMessage.value = null
-                } else {
-                    _errorMessage.value = "Error: ${response.message}"
-                    Log.e("AuthViewModel", "Error: ${response.message}")
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            val response = repository.searchGitHubUsers(query)
+            when(response){
+                is Response.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        users = response.data?.items ?: emptyList()
+                    )}
+                is Response.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = response.message ?: "An unknown error occurred"
+                    )
+                }
+                is Response.Loading -> {
+                    _uiState.value = _uiState.value.copy(isLoading = true)
+                }
+            }
+
+        }
+    }
+
+
+    fun getFollowers(link: String, currentUser:User) {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+
+        viewModelScope.launch {
+
+            if(!_uiState.value.users.contains(currentUser)
+            ){
+                _uiState.value = _uiState.value.copy(users = _uiState.value.users + currentUser)
+            }
+            val followersResponse = repository.getFollowersFollowing(link)
+            when (followersResponse) {
+                is Response.Success -> {
+                    val updatedUser= _uiState.value.users.map { user ->
+                        if (user.login == currentUser.login) {
+                            user.copy(followers = followersResponse.data)
+                        } else {
+                            user
+                        }
+                    }
+                    // Update the UI state with the chapters that now include verses
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        users = updatedUser
+                    )
+                }
+                is Response.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = followersResponse.message ?: "An unknown error occurred"
+                    )
+                }
+                is Response.Loading -> {
+                    _uiState.value = _uiState.value.copy(isLoading = true)
                 }
             }
         }
     }
 
-    fun setCurrentUser(user: User) {
+    fun getRepos(link: String,login:String) {
         viewModelScope.launch {
-            _currentUser.value = user
-            Log.d("UsersViewmodel", "setCurrentUser: $user")
-        }
-    }
+            _uiState.value = _uiState.value.copy(isLoading = true)
 
-    fun getFollowers(link: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.getFollowersFollowing(link).collect { response ->
-                _isLoading.value = false
-                if (response.data != null) {
-                    Log.e("UsersViewmodel", "Error: ${response.message}")
+            viewModelScope.launch {
+                delay(2000L)
+                val reposResponse = repository.getRepos(link)
+                when (reposResponse) {
+                    is Response.Success -> {
+                        val updatedUser= _uiState.value.users.map { user ->
+                            if (user.login == login) {
 
-                    _currentUser.value = _currentUser.value?.copy(followers = response.data)
-                    _errorMessage.value = null
-                }
-                else {
-                    _errorMessage.value = "Error: ${response.message}"
-                    Log.e("UsersViewmodel", "Error: ${response.message}")
+                                user.copy(repos = reposResponse.data)
+                            } else {
+                                user
+                            }
+                        }
+                        // Update the UI state with the chapters that now include verses
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            users = updatedUser
+                        )
+                    }
+                    is Response.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = reposResponse.message ?: "An unknown error occurred"
+                        )
+                    }
+                    is Response.Loading -> {
+                        _uiState.value = _uiState.value.copy(isLoading = true)
+                    }
                 }
             }
         }
     }
-    fun getFollowing(link: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.getFollowersFollowing(link).collect { response ->
-                _isLoading.value = false
-                if (response.data != null) {
-                    _currentUser.value = _currentUser.value?.copy(following = response.data)
-                    _errorMessage.value = null
-                    Log.e("UsersViewmodel", "Error: ${response.message}")
-
-                }
-                else {
-                    _errorMessage.value = "Error: ${response.message}"
-                    Log.e("UsersViewmodel", "Error: ${response.message}")
-                }
-            }
-        }
-    }
-
-    fun getRepos(link: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.getRepos(link).collect { response ->
-                _isLoading.value = false
-                if (response.data != null) {
-                    Log.e("UsersViewmodel", "Error: ${response.message}")
-
-                    _currentUser.value = _currentUser.value?.copy(repos = response.data)
-                    _errorMessage.value = null
-                }
-                else {
-                    _errorMessage.value = "Error: ${response.message}"
-                    Log.e("UsersViewmodel", "Error: ${response.message}")
-                }
-            }
-        }
-    }
-
-
-
 }
+
+

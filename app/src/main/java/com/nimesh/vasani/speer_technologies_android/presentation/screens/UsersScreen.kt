@@ -29,7 +29,9 @@ import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.rememberAsyncImagePainter
+import com.nimesh.vasani.speer_technologies_android.data.model.User
 import com.nimesh.vasani.speer_technologies_android.presentation.viewmodels.UsersViewmodel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,20 +58,22 @@ import com.nimesh.vasani.speer_technologies_android.presentation.viewmodels.User
 fun UsersScreen(
     modifier: Modifier = Modifier,
     usersViewmodel: UsersViewmodel,
-    onFollowersClick: () -> Unit
+    onFollowersClick: (followers: List<User>) -> Unit,
+    login: String
 ) {
 
-    val currentUser = usersViewmodel.currentUser.collectAsStateWithLifecycle()
+    val uiState by usersViewmodel.uiState.collectAsState()
 
-
-    val isRefreshing by usersViewmodel.isLoading.collectAsStateWithLifecycle()
 
     val pullToRefreshState = rememberPullToRefreshState()
 
     PullToRefreshBox(
-        isRefreshing = isRefreshing,
+        isRefreshing = uiState.isLoading,
         onRefresh = {
-            usersViewmodel.getFollowers(currentUser.value?.followers_url ?: "")
+            usersViewmodel.getFollowers(
+                uiState.users.find { it.login == login }?.followers_url ?: "",
+                currentUser = uiState.users.find { it.login == login }!!
+            )
 
         },
         modifier = modifier,
@@ -76,7 +81,7 @@ fun UsersScreen(
         indicator = {
             Indicator(
                 modifier = Modifier.align(Alignment.TopCenter),
-                isRefreshing = isRefreshing,
+                isRefreshing = uiState.isLoading,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 state = pullToRefreshState
@@ -96,7 +101,7 @@ fun UsersScreen(
                     ) {
 
                         Text(
-                            text = currentUser.value?.login ?: "Unknown user",
+                            text = uiState.users.find { it.login == login }?.login ?: "",
                             fontSize = 30.sp,
                             fontWeight = ExtraBold,
                             fontFamily = FontFamily.SansSerif,
@@ -118,7 +123,7 @@ fun UsersScreen(
 
 
                             Image(
-                                painter = rememberAsyncImagePainter(currentUser.value?.avatar_url),
+                                painter = rememberAsyncImagePainter(uiState.users.find { it.login == login }?.avatar_url),
                                 contentDescription = "",
                                 modifier = Modifier
                                     .size(90.dp)
@@ -135,7 +140,7 @@ fun UsersScreen(
 
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 CustomText(
-                                    text = currentUser.value?.repos?.size?.toString()
+                                    text = uiState.users.find { it.login == login }?.repos?.size?.toString()
                                         ?: "not visible",
                                     fontSize = 16.sp
                                 )
@@ -144,17 +149,20 @@ fun UsersScreen(
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.clickable {
-                                    onFollowersClick()
+                                    onFollowersClick(
+                                        uiState.users.find { it.login == login }?.followers
+                                            ?: emptyList()
+                                    )
                                 }) {
                                 CustomText(
-                                    text = currentUser.value?.followers?.size.toString(),
+                                    text = uiState.users.find { it.login == login }?.followers?.size.toString(),
                                     fontSize = 16.sp
                                 )
                                 CustomText(text = "Followers", color = Color.Gray, fontSize = 12.sp)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 CustomText(
-                                    text = currentUser.value?.following?.size?.toString()
+                                    text = uiState.users.find { it.login == login }?.following?.size?.toString()
                                         ?: "not visible",
                                     fontSize = 16.sp
                                 )
@@ -167,7 +175,7 @@ fun UsersScreen(
 
                         }
                         Text(
-                            text = "${currentUser.value?.login}'s Repositories",
+                            text = "${uiState.users.find { it.login == login }?.login}'s Repositories",
                             fontSize = 20.sp,
                             fontWeight = W600,
                             color = MaterialTheme.colorScheme.primary,
@@ -186,8 +194,8 @@ fun UsersScreen(
 
                 }
             }
-            if (currentUser.value?.repos?.isNotEmpty() == true)
-                itemsIndexed(currentUser.value?.repos!!) { index, item ->
+            if (uiState.users.find { it.login == login }?.repos?.isNotEmpty() == true)
+                itemsIndexed(uiState.users.find { it.login == login }?.repos!!) { index, item ->
                     Card(
                         modifier = Modifier
                             .padding(horizontal = 16.dp)

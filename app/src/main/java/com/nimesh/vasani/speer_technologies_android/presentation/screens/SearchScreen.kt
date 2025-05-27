@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,19 +47,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.rememberAsyncImagePainter
-import com.nimesh.vasani.speer_technologies_android.data.model.User
-import com.nimesh.vasani.speer_technologies_android.presentation.viewmodels.UsersViewmodel
+import com.nimesh.vasani.speer_technologies_android.data.model.Posts
+import com.nimesh.vasani.speer_technologies_android.presentation.viewmodels.SearchViewModel
 import kotlinx.coroutines.delay
-import org.koin.androidx.compose.koinViewModel
+import kotlinx.coroutines.launch
 
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalMaterial3Api::class
-)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    onUsersClick: (user: User) -> Unit,
-    usersViewModel: UsersViewmodel
+fun SearchScreen(
+    modifier: Modifier = Modifier,
+    searchViewmodel: SearchViewModel,
+    onClick :(post : Posts) ->  Unit
 ) {
 
     val queryText = remember { mutableStateOf("") }
@@ -65,19 +66,14 @@ fun HomeScreen(
     val searchActive = remember { mutableStateOf(false) }
     val localFocusManager = LocalFocusManager.current
 
-    val uiState = usersViewModel.uiState.collectAsStateWithLifecycle()
 
-
-    LaunchedEffect(queryText.value) {
-        // Wait for a short delay to prevent calling on each keystroke
-        delay(500)
-        if (queryText.value != searchQuery.value) {
-            searchQuery.value = queryText.value
-            if (searchQuery.value.isNotBlank()) {
-                usersViewModel.searchUsers(searchQuery.value)
-            }
-        }
+    LaunchedEffect(Unit) {
+        searchViewmodel.getAllPosts()
     }
+
+    val uiState = searchViewmodel.uiState.collectAsStateWithLifecycle()
+    var posts = uiState.value.posts.filter { it.reactions.likes > 500 }
+    val scope = rememberCoroutineScope()
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -86,7 +82,10 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         stickyHeader {
-            Column(verticalArrangement = Arrangement.Top, modifier = Modifier.background(Color(0XFFFAF9F6))) {
+            Column(
+                verticalArrangement = Arrangement.Top,
+                modifier = Modifier.background(Color(0XFFFAF9F6))
+            ) {
 
                 val colors1 = SearchBarDefaults.colors(containerColor = Color.White)
                 Text(
@@ -105,7 +104,22 @@ fun HomeScreen(
                                 if (!it.startsWith(" ") && !it.endsWith("  ")) {
                                     queryText.value = it
                                 }
-
+                                scope.launch {
+                                    delay(200L)
+                                    posts = uiState.value.posts.filter {
+                                        it.title.contains(queryText.value, ignoreCase = true) || it.body.contains(
+                                            queryText.value,
+                                            ignoreCase = true
+                                        )
+                                    }
+                                }
+                                if (queryText.value.isBlank()) {
+                                    scope.launch {
+                                        delay(200L)
+                                        posts =
+                                            uiState.value.posts.filter { it.reactions.likes > 500 }
+                                    }
+                                }
                             },
                             onSearch = {
 
@@ -154,50 +168,45 @@ fun HomeScreen(
         item {
             Spacer(modifier = Modifier.height(10.dp))
         }
-        if (uiState.value?.users?.isNotEmpty() == true) {
-            val users = uiState.value.users
-            items(users.size) {
-                Row(
+        if (posts.isNotEmpty()) {
+
+            items(if (queryText.value.isBlank()) 10 else posts.size) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 10.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(
+                            1.dp,
+                            color = Color.Black.copy(0.3f),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .padding(10.dp).clickable{
+                            onClick(posts[it])
+                        }
                 ) {
-                    Image(
-                        painter = rememberAsyncImagePainter(users[it].avatar_url),
-                        contentDescription = "user profile pic",
+                    Row(
                         modifier = Modifier
-                            .border(width = 2.dp, color = Color.Black, shape = CircleShape)
-                            .padding(4.dp)
-                            .clip(CircleShape)
-                            .size(80.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                            .padding(start = 10.dp)
-                            .height(80.dp)
-                            .clickable {
-
-                                onUsersClick(users[it])
-                            },
-                        verticalArrangement = Arrangement.Center
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = users[it].login,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
+                            posts[it].title,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            modifier = Modifier.weight(1f),
+                            overflow = if (posts[it].title.length > 30) TextOverflow.Ellipsis else TextOverflow.Visible
                         )
-                        Text(
-                            text = "1",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal,
-                            maxLines = 1,
-                            color = Color.Black.copy(0.72f),
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("likes : ${posts[it].reactions.likes}")
                     }
+                    Text(
+                        posts[it].body,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+
+                    )
                 }
             }
         } else {
